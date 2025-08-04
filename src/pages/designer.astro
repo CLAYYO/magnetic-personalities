@@ -1,0 +1,76 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ShapedMarkerDesigner from '../components/ShapedMarkerDesigner.astro';
+---
+
+<Layout title="Design Your Custom Golf Ball Marker - Magnetic Personalities">
+  <div class="min-h-screen bg-gray-50 py-12">
+    <ShapedMarkerDesigner />
+    
+    <!-- Instructions Section -->
+    <div class="max-w-4xl mx-auto mt-12 px-6">
+      <div class="bg-white rounded-lg shadow-lg p-8">
+        <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Design Instructions</h3>
+        
+        <div class="grid md:grid-cols-2 gap-8">
+          <div>
+            <h4 class="text-lg font-semibold text-gray-900 mb-4">Getting Started</h4>
+            <ul class="space-y-2 text-gray-600">
+              <li class="flex items-start">
+                <span class="text-primary-600 mr-2">•</span>
+                Upload a high-quality image (JPG, PNG) for best results
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-600 mr-2">•</span>
+                Choose your preferred shape from the available options
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-600 mr-2">•</span>
+                Use the canvas controls to position and resize your image
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-600 mr-2">•</span>
+                Click "Generate Preview & Upload" to create your final design
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="text-lg font-semibold text-gray-900 mb-4">Tips for Best Results</h4>
+            <ul class="space-y-2 text-gray-600">
+              <li class="flex items-start">
+                <span class="text-primary-600 mr-2">•</span>
+                Use images with good contrast and clear subjects
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-600 mr-2">•</span>
+                Center important elements within the shape boundary
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-600 mr-2">•</span>
+                Avoid very small text or fine details that may not print clearly
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-600 mr-2">•</span>
+                Preview your design before adding to cart
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+          <div class="flex items-start">
+            <div class="text-blue-600 mr-3 mt-1">ℹ️</div>
+            <div>
+              <h5 class="font-semibold text-blue-900 mb-1">Need Help?</h5>
+              <p class="text-blue-800 text-sm">
+                If you're having trouble with your design or have questions about the process, 
+                feel free to contact our support team. We're here to help you create the perfect custom marker!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

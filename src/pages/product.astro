@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { config } from '../config';
+---
+
+<Layout title="Custom Golf Ball Marker - Product">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-4">{config.product.name}</h1>
+      <p class="text-gray-600 mb-6">Create a personalized golf ball marker from your own photo</p>
+      
+      <div class="mb-6">
+        <span class="text-3xl font-bold text-primary-600">${config.product.price}</span>
+      </div>
+      
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Product Details</h2>
+        <ul class="list-disc list-inside text-gray-600 space-y-2">
+          <li>Custom shaped golf ball marker</li>
+          <li>Made from your uploaded photo</li>
+          <li>Available in circle, square, or shield shapes</li>
+          <li>High-quality durable material</li>
+          <li>Perfect for personalizing your golf game</li>
+        </ul>
+      </div>
+      
+      <a href="/designer" class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors inline-block">
+        Design Your Marker
+      </a>
+    </div>
+  </div>
+</Layout>

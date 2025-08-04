@@ -1,0 +1,536 @@
+---
+import { config } from '../config';
+---
+
+<div class="max-w-4xl mx-auto p-6">
+  <div class="bg-white rounded-lg shadow-lg p-8">
+    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Design Your Custom Marker</h2>
+    
+    <div class="grid lg:grid-cols-2 gap-8">
+      <!-- Design Canvas -->
+      <div class="space-y-6">
+        <div class="text-center">
+          <h3 class="text-xl font-semibold text-gray-900 mb-4">Preview</h3>
+          <div class="bg-gray-100 rounded-lg p-4 inline-block">
+            <canvas id="marker-canvas" width={config.canvas.width} height={config.canvas.height} class="border border-gray-300 rounded"></canvas>
+          </div>
+        </div>
+        
+        <!-- Canvas Controls -->
+        <div class="flex flex-wrap gap-2 justify-center">
+          <button id="reset-btn" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">
+            Reset
+          </button>
+          <button id="flip-horizontal" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+            Flip H
+          </button>
+          <button id="flip-vertical" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+            Flip V
+          </button>
+          <button id="rotate-left" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+            ↺ Rotate
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls Panel -->
+      <div class="space-y-6">
+        <!-- Image Upload -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Upload Your Photo
+          </label>
+          <input 
+            type="file" 
+            id="image-upload" 
+            accept="image/*" 
+            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+          />
+        </div>
+
+        <!-- Shape Selection -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Choose Shape
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            {config.shapes.map((shape) => (
+              <button 
+                class="shape-btn p-4 border-2 border-gray-300 rounded-lg text-center hover:border-primary-500 transition-colors"
+                data-shape={shape.id}
+              >
+                <div class="text-2xl mb-1">{shape.icon}</div>
+                <div class="text-sm font-medium">{shape.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- Size Controls -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Image Size
+          </label>
+          <input 
+            type="range" 
+            id="size-slider" 
+            min="0.1" 
+            max="2" 
+            step="0.1" 
+            value="1" 
+            class="w-full"
+          />
+        </div>
+
+        <!-- Generate Preview Button -->
+        <button 
+          id="generate-preview" 
+          class="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          disabled
+        >
+          Generate Preview & Upload
+        </button>
+
+        <!-- Upload Status -->
+        <div id="upload-status" class="hidden">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-center">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              <span class="text-blue-800">Uploading to Cloudinary...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="upload-success" class="hidden">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="text-green-800 font-medium">✓ Preview uploaded successfully!</div>
+          </div>
+        </div>
+
+        <!-- Add to Cart Button -->
+        <button 
+          id="add-to-cart"
+          class="snipcart-add-item w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          disabled
+          data-item-id={config.product.id}
+          data-item-price={config.product.price}
+          data-item-description={config.product.name}
+          data-item-name={config.product.name}
+          data-item-url="http://localhost:4321/product"
+          data-item-custom1-name="Preview Image URL"
+          data-item-custom1-options=""
+          data-item-custom1-value=""
+        >
+          Add to Cart - ${config.product.price}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ config }}>
+  class MarkerDesigner {
+    constructor() {
+      this.canvas = null;
+      this.uploadedImage = null;
+      this.currentShape = 'circle';
+      this.previewImageUrl = null;
+      this.init();
+    }
+
+    init() {
+      // Initialize Fabric.js canvas
+      this.canvas = new fabric.Canvas('marker-canvas', {
+        backgroundColor: '#ffffff',
+        selection: false
+      });
+
+      // Set initial shape
+      this.setShape('circle');
+      
+      // Bind events
+      this.bindEvents();
+    }
+
+    bindEvents() {
+      // Image upload
+      document.getElementById('image-upload').addEventListener('change', (e) => {
+        this.handleImageUpload(e);
+      });
+
+      // Shape selection
+      document.querySelectorAll('.shape-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const shape = e.currentTarget.dataset.shape;
+          this.setShape(shape);
+          this.updateShapeButtons(shape);
+        });
+      });
+
+      // Size slider
+      document.getElementById('size-slider').addEventListener('input', (e) => {
+        this.scaleImage(parseFloat(e.target.value));
+      });
+
+      // Control buttons
+      document.getElementById('reset-btn').addEventListener('click', () => this.resetCanvas());
+      document.getElementById('flip-horizontal').addEventListener('click', () => this.flipImage('horizontal'));
+      document.getElementById('flip-vertical').addEventListener('click', () => this.flipImage('vertical'));
+      document.getElementById('rotate-left').addEventListener('click', () => this.rotateImage());
+
+      // Generate preview
+      document.getElementById('generate-preview').addEventListener('click', () => {
+        this.generateAndUploadPreview();
+      });
+    }
+
+    handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        fabric.Image.fromURL(e.target.result, (img) => {
+          // Remove existing image
+          if (this.uploadedImage) {
+            this.canvas.remove(this.uploadedImage);
+          }
+
+          // Scale image to fit canvas
+          const scale = Math.min(
+            (config.canvas.width * 0.6) / img.width,
+            (config.canvas.height * 0.6) / img.height
+          );
+
+          img.set({
+            left: config.canvas.width / 2,
+            top: config.canvas.height / 2,
+            originX: 'center',
+            originY: 'center',
+            scaleX: scale,
+            scaleY: scale,
+            selectable: true,
+            hasControls: true,
+            hasBorders: true
+          });
+
+          this.uploadedImage = img;
+          this.canvas.add(img);
+          this.canvas.setActiveObject(img);
+          this.canvas.renderAll();
+
+          // Enable generate button
+          document.getElementById('generate-preview').disabled = false;
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    setShape(shapeType) {
+      this.currentShape = shapeType;
+      
+      // Clear existing shapes
+      this.canvas.getObjects().forEach(obj => {
+        if (obj.isShape) {
+          this.canvas.remove(obj);
+        }
+      });
+
+      let shape;
+      const centerX = config.canvas.width / 2;
+      const centerY = config.canvas.height / 2;
+      const size = Math.min(config.canvas.width, config.canvas.height) * 0.8;
+
+      switch (shapeType) {
+        case 'circle':
+          shape = new fabric.Circle({
+            radius: size / 2,
+            left: centerX,
+            top: centerY,
+            originX: 'center',
+            originY: 'center',
+            fill: 'transparent',
+            stroke: '#3b82f6',
+            strokeWidth: 3,
+            selectable: false,
+            evented: false,
+            isShape: true
+          });
+          break;
+        case 'square':
+          shape = new fabric.Rect({
+            width: size,
+            height: size,
+            left: centerX,
+            top: centerY,
+            originX: 'center',
+            originY: 'center',
+            fill: 'transparent',
+            stroke: '#3b82f6',
+            strokeWidth: 3,
+            selectable: false,
+            evented: false,
+            isShape: true
+          });
+          break;
+        case 'shield':
+          const shieldPath = `M ${centerX} ${centerY - size/2} 
+                             C ${centerX + size/3} ${centerY - size/2}, ${centerX + size/2} ${centerY - size/4}, ${centerX + size/2} ${centerY} 
+                             C ${centerX + size/2} ${centerY + size/3}, ${centerX + size/4} ${centerY + size/2}, ${centerX} ${centerY + size/2} 
+                             C ${centerX - size/4} ${centerY + size/2}, ${centerX - size/2} ${centerY + size/3}, ${centerX - size/2} ${centerY} 
+                             C ${centerX - size/2} ${centerY - size/4}, ${centerX - size/3} ${centerY - size/2}, ${centerX} ${centerY - size/2} Z`;
+          
+          shape = new fabric.Path(shieldPath, {
+            fill: 'transparent',
+            stroke: '#3b82f6',
+            strokeWidth: 3,
+            selectable: false,
+            evented: false,
+            isShape: true
+          });
+          break;
+      }
+
+      if (shape) {
+        this.canvas.add(shape);
+        this.canvas.sendToBack(shape);
+        this.canvas.renderAll();
+      }
+    }
+
+    updateShapeButtons(activeShape) {
+      document.querySelectorAll('.shape-btn').forEach(btn => {
+        btn.classList.remove('border-primary-500', 'bg-primary-50');
+        btn.classList.add('border-gray-300');
+      });
+      
+      const activeBtn = document.querySelector(`[data-shape="${activeShape}"]`);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-gray-300');
+        activeBtn.classList.add('border-primary-500', 'bg-primary-50');
+      }
+    }
+
+    scaleImage(scale) {
+      if (this.uploadedImage) {
+        this.uploadedImage.set({
+          scaleX: this.uploadedImage.scaleX * scale / this.uploadedImage.scaleX,
+          scaleY: this.uploadedImage.scaleY * scale / this.uploadedImage.scaleY
+        });
+        this.canvas.renderAll();
+      }
+    }
+
+    flipImage(direction) {
+      if (this.uploadedImage) {
+        if (direction === 'horizontal') {
+          this.uploadedImage.set('flipX', !this.uploadedImage.flipX);
+        } else {
+          this.uploadedImage.set('flipY', !this.uploadedImage.flipY);
+        }
+        this.canvas.renderAll();
+      }
+    }
+
+    rotateImage() {
+      if (this.uploadedImage) {
+        this.uploadedImage.rotate(this.uploadedImage.angle + 90);
+        this.canvas.renderAll();
+      }
+    }
+
+    resetCanvas() {
+      if (this.uploadedImage) {
+        this.uploadedImage.set({
+          left: config.canvas.width / 2,
+          top: config.canvas.height / 2,
+          scaleX: 1,
+          scaleY: 1,
+          angle: 0,
+          flipX: false,
+          flipY: false
+        });
+        this.canvas.renderAll();
+      }
+    }
+
+    async generateAndUploadPreview() {
+      if (!this.uploadedImage) {
+        alert('Please upload an image first');
+        return;
+      }
+
+      try {
+        // Show loading state
+        document.getElementById('upload-status').classList.remove('hidden');
+        document.getElementById('generate-preview').disabled = true;
+
+        // Create high-res export canvas
+        const exportCanvas = new fabric.Canvas(null, {
+          width: config.canvas.exportWidth,
+          height: config.canvas.exportHeight
+        });
+
+        // Scale factor for high-res export
+        const scaleFactor = config.canvas.exportWidth / config.canvas.width;
+
+        // Clone and scale objects for export
+        const objects = this.canvas.getObjects();
+        for (let obj of objects) {
+          const cloned = await this.cloneObject(obj);
+          cloned.set({
+            left: obj.left * scaleFactor,
+            top: obj.top * scaleFactor,
+            scaleX: obj.scaleX * scaleFactor,
+            scaleY: obj.scaleY * scaleFactor
+          });
+          
+          if (cloned.type === 'path') {
+            cloned.set({
+              strokeWidth: obj.strokeWidth * scaleFactor
+            });
+          } else if (cloned.type === 'circle' || cloned.type === 'rect') {
+            cloned.set({
+              strokeWidth: obj.strokeWidth * scaleFactor
+            });
+            if (cloned.type === 'circle') {
+              cloned.set({ radius: obj.radius * scaleFactor });
+            } else {
+              cloned.set({
+                width: obj.width * scaleFactor,
+                height: obj.height * scaleFactor
+              });
+            }
+          }
+          
+          exportCanvas.add(cloned);
+        }
+
+        exportCanvas.renderAll();
+
+        // Apply shape mask and export
+        const dataURL = this.applyShapeMask(exportCanvas);
+        
+        // Upload to Cloudinary
+        const imageUrl = await this.uploadToCloudinary(dataURL);
+        
+        this.previewImageUrl = imageUrl;
+        
+        // Hide loading, show success
+        document.getElementById('upload-status').classList.add('hidden');
+        document.getElementById('upload-success').classList.remove('hidden');
+        
+        // Enable add to cart
+        const addToCartBtn = document.getElementById('add-to-cart');
+        addToCartBtn.disabled = false;
+        addToCartBtn.setAttribute('data-item-custom1-value', imageUrl);
+        
+        // Re-enable generate button
+        document.getElementById('generate-preview').disabled = false;
+
+      } catch (error) {
+        console.error('Error generating preview:', error);
+        document.getElementById('upload-status').classList.add('hidden');
+        alert('Error generating preview. Please try again.');
+        document.getElementById('generate-preview').disabled = false;
+      }
+    }
+
+    async cloneObject(obj) {
+      return new Promise((resolve) => {
+        obj.clone((cloned) => {
+          resolve(cloned);
+        });
+      });
+    }
+
+    applyShapeMask(canvas) {
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      
+      // Create mask based on shape
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = canvas.width;
+      maskCanvas.height = canvas.height;
+      const maskCtx = maskCanvas.getContext('2d');
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const size = Math.min(canvas.width, canvas.height) * 0.8;
+      
+      maskCtx.fillStyle = 'black';
+      
+      switch (this.currentShape) {
+        case 'circle':
+          maskCtx.beginPath();
+          maskCtx.arc(centerX, centerY, size / 2, 0, 2 * Math.PI);
+          maskCtx.fill();
+          break;
+        case 'square':
+          maskCtx.fillRect(centerX - size/2, centerY - size/2, size, size);
+          break;
+        case 'shield':
+          maskCtx.beginPath();
+          maskCtx.moveTo(centerX, centerY - size/2);
+          maskCtx.bezierCurveTo(centerX + size/3, centerY - size/2, centerX + size/2, centerY - size/4, centerX + size/2, centerY);
+          maskCtx.bezierCurveTo(centerX + size/2, centerY + size/3, centerX + size/4, centerY + size/2, centerX, centerY + size/2);
+          maskCtx.bezierCurveTo(centerX - size/4, centerY + size/2, centerX - size/2, centerY + size/3, centerX - size/2, centerY);
+          maskCtx.bezierCurveTo(centerX - size/2, centerY - size/4, centerX - size/3, centerY - size/2, centerX, centerY - size/2);
+          maskCtx.closePath();
+          maskCtx.fill();
+          break;
+      }
+      
+      // Apply mask
+      const maskData = maskCtx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        if (maskData.data[i] === 0) { // Outside mask
+          imageData.data[i + 3] = 0; // Make transparent
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      return canvas.toDataURL('image/png', 1.0);
+    }
+
+    async uploadToCloudinary(dataURL) {
+      const formData = new FormData();
+      
+      // Convert dataURL to blob
+      const response = await fetch(dataURL);
+      const blob = await response.blob();
+      
+      formData.append('file', blob);
+      formData.append('upload_preset', config.cloudinary.uploadPreset);
+      formData.append('cloud_name', config.cloudinary.cloudName);
+      
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${config.cloudinary.cloudName}/image/upload`,
+        {
+          method: 'POST',
+          body: formData
+        }
+      );
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const result = await uploadResponse.json();
+      return result.secure_url;
+    }
+  }
+
+  // Initialize when DOM is loaded and Fabric.js is available
+  function initializeDesigner() {
+    if (typeof fabric !== 'undefined') {
+      new MarkerDesigner();
+    } else {
+      // Wait for Fabric.js to load
+      setTimeout(initializeDesigner, 100);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initializeDesigner);
+</script>

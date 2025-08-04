@@ -1,0 +1,109 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Thank You - Order Confirmed - Magnetic Personalities">
+  <div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+        <div class="mb-8">
+          <div class="text-6xl text-green-500 mb-4">✓</div>
+          <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Thank You for Your Order!
+          </h1>
+          <p class="text-xl text-gray-600 mb-6">
+            Your custom golf ball marker is being prepared for production.
+          </p>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-6 mb-8">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">What Happens Next?</h2>
+          <div class="grid md:grid-cols-3 gap-6 text-left">
+            <div>
+              <div class="bg-primary-100 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                <span class="text-lg font-bold text-primary-600">1</span>
+              </div>
+              <h3 class="font-semibold text-gray-900 mb-2">Order Processing</h3>
+              <p class="text-gray-600 text-sm">
+                We'll review your design and begin production within 24 hours.
+              </p>
+            </div>
+            
+            <div>
+              <div class="bg-primary-100 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                <span class="text-lg font-bold text-primary-600">2</span>
+              </div>
+              <h3 class="font-semibold text-gray-900 mb-2">Manufacturing</h3>
+              <p class="text-gray-600 text-sm">
+                Your custom marker will be carefully crafted using premium materials.
+              </p>
+            </div>
+            
+            <div>
+              <div class="bg-primary-100 w-12 h-12 rounded-full flex items-center justify-center mb-3">
+                <span class="text-lg font-bold text-primary-600">3</span>
+              </div>
+              <h3 class="font-semibold text-gray-900 mb-2">Shipping</h3>
+              <p class="text-gray-600 text-sm">
+                Your marker will be shipped to you within 5-7 business days.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 rounded-lg p-6 mb-8">
+          <h3 class="text-lg font-semibold text-blue-900 mb-2">Order Confirmation</h3>
+          <p class="text-blue-800 text-sm mb-4">
+            You should receive an email confirmation shortly with your order details and tracking information.
+          </p>
+          <div id="order-preview" class="hidden">
+            <p class="text-blue-800 text-sm mb-2">Your Custom Design:</p>
+            <img id="preview-image" src="" alt="Your custom marker design" class="mx-auto rounded-lg shadow-sm max-w-xs" />
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/" class="bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors">
+            Return to Home
+          </a>
+          <a href="/designer" class="border-2 border-primary-600 text-primary-600 px-6 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors">
+            Design Another Marker
+          </a>
+        </div>
+
+        <div class="mt-8 pt-8 border-t border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Questions?</h3>
+          <p class="text-gray-600 mb-4">
+            If you have any questions about your order or need to make changes, please contact us as soon as possible.
+          </p>
+          <div class="text-sm text-gray-500">
+            <p>Email: support@magneticpersonalities.com</p>
+            <p>Phone: (555) 123-4567</p>
+            <p>Hours: Monday-Friday, 9AM-5PM EST</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Check for preview image in URL parameters or localStorage
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const previewUrl = urlParams.get('preview') || localStorage.getItem('lastPreviewUrl');
+    
+    if (previewUrl) {
+      const orderPreview = document.getElementById('order-preview');
+      const previewImage = document.getElementById('preview-image') as HTMLImageElement;
+      
+      if (orderPreview && previewImage) {
+        previewImage.src = previewUrl;
+        orderPreview.classList.remove('hidden');
+      }
+      
+      // Clear from localStorage after showing
+      localStorage.removeItem('lastPreviewUrl');
+    }
+  });
+</script>

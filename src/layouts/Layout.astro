@@ -1,0 +1,68 @@
+---
+import { config } from '../config';
+
+export interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Create custom shaped golf ball markers with your photos' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    
+    <!-- Snipcart CSS -->
+    <link rel="preconnect" href="https://app.snipcart.com">
+    <link rel="preconnect" href="https://cdn.snipcart.com">
+    <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.2.0/default/snipcart.css" />
+    
+    <!-- Fabric.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-gray-50">
+    <header class="bg-white shadow-sm border-b">
+      <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center">
+            <a href="/" class="text-2xl font-bold text-primary-600">
+              Magnetic Personalities
+            </a>
+          </div>
+          <div class="flex items-center space-x-4">
+            <a href="/designer" class="text-gray-700 hover:text-primary-600 font-medium">
+              Design Marker
+            </a>
+            <button class="snipcart-checkout bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
+              Cart (<span class="snipcart-items-count">0</span>)
+            </button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="bg-gray-800 text-white py-12 mt-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+          <h3 class="text-2xl font-bold mb-4">Magnetic Personalities</h3>
+          <p class="text-gray-300 mb-4">Custom shaped golf ball markers made from your photos</p>
+          <p class="text-gray-400 text-sm">© 2024 Magnetic Personalities. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Snipcart -->
+    <div hidden id="snipcart" data-api-key={config.snipcart.publicApiKey}></div>
+    <script src="https://cdn.snipcart.com/themes/v3.2.0/default/snipcart.js"></script>
+  </body>
+</html>
