@@ -24,6 +24,22 @@ import { config } from '../config';
         </ul>
       </div>
       
+      <!-- Snipcart Product Definition (Hidden) -->
+      <div style="display: none;">
+        <button 
+          class="snipcart-add-item"
+          data-item-id={config.product.id}
+          data-item-price={config.product.price}
+          data-item-description={config.product.name}
+          data-item-name={config.product.name}
+          data-item-url={`${Astro.url.origin}/product`}
+          data-item-custom1-name="Preview Image URL"
+          data-item-custom1-options=""
+          data-item-custom1-value="">
+          Add to Cart
+        </button>
+      </div>
+
       <a href="/designer" class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors inline-block">
         Design Your Marker
       </a>
