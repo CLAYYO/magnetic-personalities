@@ -1,4 +1,5 @@
 // Configuration constants for the application
+// Updated for Cloudflare Pages deployment
 export const config = {
   // Cloudinary settings
   cloudinary: {
