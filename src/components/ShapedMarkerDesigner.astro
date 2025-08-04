@@ -149,6 +149,9 @@ import { config } from '../config';
       // Set initial shape
       this.setShape('circle');
       
+      // Check for caricature image from generator
+      this.checkForCaricatureImage();
+      
       // Bind events
       this.bindEvents();
     }
@@ -520,6 +523,62 @@ import { config } from '../config';
       
       const result = await uploadResponse.json();
       return result.secure_url;
+    }
+
+    checkForCaricatureImage() {
+      // Check if there's a caricature image in sessionStorage
+      const caricatureData = sessionStorage.getItem('caricatureImage');
+      if (caricatureData) {
+        this.loadCaricatureImage(caricatureData);
+        // Clear the stored data after loading
+        sessionStorage.removeItem('caricatureImage');
+      }
+    }
+
+    loadCaricatureImage(imageData) {
+      fabric.Image.fromURL(imageData, (img) => {
+        // Remove existing image
+        if (this.uploadedImage) {
+          this.canvas.remove(this.uploadedImage);
+        }
+
+        // Scale image to fit canvas
+        const scale = Math.min(
+          (config.canvas.width * 0.6) / img.width,
+          (config.canvas.height * 0.6) / img.height
+        );
+
+        img.set({
+          left: config.canvas.width / 2,
+          top: config.canvas.height / 2,
+          originX: 'center',
+          originY: 'center',
+          scaleX: scale,
+          scaleY: scale,
+          selectable: true,
+          hasControls: true,
+          hasBorders: true
+        });
+
+        this.uploadedImage = img;
+        this.canvas.add(img);
+        this.canvas.setActiveObject(img);
+        this.canvas.renderAll();
+
+        // Enable generate button
+        document.getElementById('generate-preview').disabled = false;
+        
+        // Show success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4';
+        successDiv.innerHTML = '<div class="text-blue-800 font-medium">✓ Caricature loaded successfully!</div>';
+        document.querySelector('.space-y-6').insertBefore(successDiv, document.querySelector('.space-y-6').firstChild);
+        
+        // Remove message after 3 seconds
+        setTimeout(() => {
+          successDiv.remove();
+        }, 3000);
+      });
     }
   }
 
