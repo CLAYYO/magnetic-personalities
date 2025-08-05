@@ -4,11 +4,33 @@ import ShapedMarkerDesigner from '../components/ShapedMarkerDesigner.astro';
 ---
 
 <Layout title="Design Your Custom Golf Ball Marker - Magnetic Personalities">
-  <div class="min-h-screen bg-gray-50 py-12">
+  <div class="min-h-screen bg-gray-50 py-8">
+    <!-- Vectorization Notice -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+      <div class="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex items-start">
+          <div class="text-blue-600 mr-3 mt-1">💡</div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-blue-900 mb-2">Get Better Results with Vectorization!</h3>
+            <p class="text-blue-800 text-sm mb-3">
+              For the highest quality markers, we recommend vectorizing your photos first. 
+              This creates crisp, scalable images that look amazing on your custom markers.
+            </p>
+            <a href="/vectorize" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              Vectorize Your Photo First
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <ShapedMarkerDesigner />
     
     <!-- Instructions Section -->
-    <div class="max-w-4xl mx-auto mt-12 px-6">
+    <div class="max-w-7xl mx-auto mt-12 px-4 sm:px-6 lg:px-8">
       <div class="bg-white rounded-lg shadow-lg p-8">
         <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Design Instructions</h3>
         

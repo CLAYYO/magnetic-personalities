@@ -1,0 +1,714 @@
+---
+// Vectorify component for converting photos to SVG vectors
+---
+
+<div class="vectorify-container">
+  <!-- User Details Section -->
+  <div class="user-details-section mb-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+    <h3 class="text-lg font-medium mb-2">Project Details</h3>
+    <p class="text-sm text-gray-600 mb-4">Please fill in your details to help us organize and track your vectorized assets.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="userName" class="block text-sm font-medium text-gray-700 mb-1">
+          Name <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="userName" 
+          placeholder="Enter your name"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="userEmail" class="block text-sm font-medium text-gray-700 mb-1">
+          Email <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="email" 
+          id="userEmail" 
+          placeholder="Enter your email"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="projectName" class="block text-sm font-medium text-gray-700 mb-1">
+          Project Name <span class="text-red-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          id="projectName" 
+          placeholder="e.g., Golf Marker Design"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="projectNotes" class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+        <input 
+          type="text" 
+          id="projectNotes" 
+          placeholder="Any additional notes"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+    <div class="mt-3 text-xs text-gray-500">
+      <span class="text-red-500">*</span> Required fields - needed for asset tracking and organization
+    </div>
+  </div>
+
+  <!-- Upload Section -->
+  <div class="upload-section mb-6">
+    <h3 class="text-lg font-medium mb-3">Upload Your Photo</h3>
+    <input 
+      type="file" 
+      id="vectorifyInput" 
+      accept="image/*" 
+      class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+    />
+  </div>
+  
+  <div class="preview-section mt-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Original Image Preview -->
+      <div>
+        <h4 class="text-md font-medium mb-2">Original</h4>
+        <div id="originalPreview" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[200px] flex items-center justify-center">
+          <span class="text-gray-500">Original image will appear here</span>
+        </div>
+      </div>
+      
+      <!-- Vectorized SVG Preview -->
+      <div>
+        <h4 class="text-md font-medium mb-2">Vectorized SVG</h4>
+        <div id="svgContainer" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[200px] flex items-center justify-center relative group cursor-pointer">
+          <span class="text-gray-500">SVG output will appear here</span>
+          <!-- Hover hint -->
+          <div id="hoverHint" class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden">
+            Click to view full size
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Controls -->
+  <div class="controls-section mt-6 p-4 bg-gray-50 rounded-lg">
+    <h4 class="text-md font-medium mb-3">Vectorization Settings</h4>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <label for="colorCount" class="block text-sm font-medium text-gray-700">Colors</label>
+        <input type="range" id="colorCount" min="4" max="32" value="16" class="w-full">
+        <span id="colorCountValue" class="text-sm text-gray-600">16</span>
+      </div>
+      <div>
+        <label for="strokeWidth" class="block text-sm font-medium text-gray-700">Stroke Width</label>
+        <input type="range" id="strokeWidth" min="0" max="5" value="1" step="0.5" class="w-full">
+        <span id="strokeWidthValue" class="text-sm text-gray-600">1</span>
+      </div>
+      <div>
+        <label for="pathOmit" class="block text-sm font-medium text-gray-700">Detail Level</label>
+        <input type="range" id="pathOmit" min="1" max="20" value="8" class="w-full">
+        <span id="pathOmitValue" class="text-sm text-gray-600">8</span>
+      </div>
+      <div class="flex items-end">
+        <button id="reprocessBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50" disabled>
+          Reprocess
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Download Section -->
+  <div class="download-section mt-6">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <button id="downloadBtn" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50" disabled>
+        Download SVG
+      </button>
+      <button id="continueToDesignerBtn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50" disabled>
+        Continue to Designer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SVG Preview Modal -->
+<div id="svgModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg max-w-6xl max-h-[90vh] w-full mx-4 flex flex-col">
+    <!-- Modal Header -->
+    <div class="flex justify-between items-center p-4 border-b">
+      <h3 class="text-lg font-semibold">Vectorized SVG Preview</h3>
+      <button id="closeModal" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">
+        ×
+      </button>
+    </div>
+    
+    <!-- Modal Content -->
+    <div class="flex-1 p-4 overflow-auto">
+      <div id="modalSvgContainer" class="flex items-center justify-center min-h-96">
+        <!-- SVG will be inserted here -->
+      </div>
+    </div>
+    
+    <!-- Modal Footer -->
+    <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
+      <div class="text-sm text-gray-600">
+        Use mouse wheel to zoom, drag to pan
+      </div>
+      <div class="space-x-2">
+        <button id="downloadFromModal" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+          Download SVG
+        </button>
+        <button id="continueFromModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors">
+          Continue to Designer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // @ts-ignore - ImageTracer doesn't have TypeScript definitions
+  import ImageTracer from 'imagetracerjs';
+
+  const input = document.getElementById('vectorifyInput') as HTMLInputElement;
+  const originalPreview = document.getElementById('originalPreview') as HTMLDivElement;
+  const svgContainer = document.getElementById('svgContainer') as HTMLDivElement;
+  const reprocessBtn = document.getElementById('reprocessBtn') as HTMLButtonElement;
+  const downloadBtn = document.getElementById('downloadBtn') as HTMLButtonElement;
+  const continueToDesignerBtn = document.getElementById('continueToDesignerBtn') as HTMLButtonElement;
+  
+  // User detail form elements
+  const userName = document.getElementById('userName') as HTMLInputElement;
+  const userEmail = document.getElementById('userEmail') as HTMLInputElement;
+  const projectName = document.getElementById('projectName') as HTMLInputElement;
+  const projectNotes = document.getElementById('projectNotes') as HTMLInputElement;
+  
+  // Control elements
+  const colorCount = document.getElementById('colorCount') as HTMLInputElement;
+  const strokeWidth = document.getElementById('strokeWidth') as HTMLInputElement;
+  const pathOmit = document.getElementById('pathOmit') as HTMLInputElement;
+  const colorCountValue = document.getElementById('colorCountValue') as HTMLSpanElement;
+  const strokeWidthValue = document.getElementById('strokeWidthValue') as HTMLSpanElement;
+  const pathOmitValue = document.getElementById('pathOmitValue') as HTMLSpanElement;
+
+  let currentImageData: ImageData | null = null;
+  let currentSvgString: string | null = null;
+  let currentCloudinaryUrl: string | null = null;
+
+  // Update value displays
+  colorCount.addEventListener('input', () => {
+    colorCountValue.textContent = colorCount.value;
+  });
+  
+  strokeWidth.addEventListener('input', () => {
+    strokeWidthValue.textContent = strokeWidth.value;
+  });
+  
+  pathOmit.addEventListener('input', () => {
+    pathOmitValue.textContent = pathOmit.value;
+  });
+
+  // Function to get user details for metadata
+  function getUserDetails() {
+    return {
+      name: userName.value.trim(),
+      email: userEmail.value.trim(),
+      projectName: projectName.value.trim(),
+      notes: projectNotes.value.trim(),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  // Function to validate required user details
+  function validateUserDetails(): boolean {
+    const details = getUserDetails();
+    if (!details.name || !details.email) {
+      alert('Please enter your name and email before uploading.');
+      return false;
+    }
+    if (!details.projectName) {
+      alert('Please enter a project name to help organize your assets.');
+      return false;
+    }
+    return true;
+  }
+
+  // Function to upload original image to Cloudinary
+  async function uploadOriginalImageToCloudinary(file: File): Promise<string | null> {
+    try {
+      console.log('🔄 Starting original image upload to Cloudinary...');
+      
+      // Validate user details first
+      if (!validateUserDetails()) {
+        console.log('❌ User validation failed, skipping original image upload');
+        return null;
+      }
+
+      // Get Cloudinary config from window object
+      const cloudinaryConfig = (window as any).CLOUDINARY_CONFIG;
+      
+      if (!cloudinaryConfig || !cloudinaryConfig.cloudName || !cloudinaryConfig.uploadPreset) {
+        console.warn('❌ Cloudinary not configured, skipping original image upload');
+        return null;
+      }
+
+      const userDetails = getUserDetails();
+      
+      // Create FormData for Cloudinary upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+      formData.append('resource_type', 'image');
+      
+      // Add metadata for asset tracking
+      const metadata = {
+        user_name: userDetails.name,
+        user_email: userDetails.email,
+        project_name: userDetails.projectName,
+        notes: userDetails.notes,
+        created_at: userDetails.timestamp,
+        asset_type: 'original_image'
+      };
+      
+      // Add context metadata
+      const contextString = Object.entries(metadata).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('|');
+      formData.append('context', contextString);
+      
+      // Create folder structure: projects/ProjectName/UserName/filename
+      const projectFolder = userDetails.projectName.replace(/[^a-zA-Z0-9]/g, '_');
+      const userFolder = userDetails.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const timestamp = Date.now();
+      const filename = `projects/${projectFolder}/${userFolder}/original_${timestamp}`;
+      formData.append('public_id', filename);
+      
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`;
+      console.log('🌐 Original image upload URL:', uploadUrl);
+      
+      // Upload to Cloudinary
+      console.log('⬆️ Sending original image to Cloudinary...');
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData
+      });
+
+      console.log('📡 Original image response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Original image Cloudinary response error:', errorText);
+        throw new Error(`Original image upload failed: ${response.statusText} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Original image uploaded to Cloudinary successfully:', result.secure_url);
+      console.log('📁 Original image folder: projects/' + projectFolder + '/' + userFolder + '/');
+      console.log('🔍 TO FIND METADATA: In Cloudinary, click on this file and look for "Context" section');
+      return result.secure_url;
+      
+    } catch (error) {
+      console.error('💥 Error uploading original image to Cloudinary:', error);
+      console.error('Error details:', error instanceof Error ? error.message : String(error));
+      return null;
+    }
+  }
+
+  // Function to automatically upload SVG to Cloudinary (hidden from user)
+  async function uploadSvgToCloudinary(svgString: string): Promise<string | null> {
+    try {
+      console.log('🔄 Starting Cloudinary upload process...');
+      
+      // Validate user details first
+      if (!validateUserDetails()) {
+        console.log('❌ User validation failed, skipping upload');
+        return null;
+      }
+
+      // Get Cloudinary config from window object
+      const cloudinaryConfig = (window as any).CLOUDINARY_CONFIG;
+      console.log('🔧 Cloudinary config:', cloudinaryConfig);
+      
+      if (!cloudinaryConfig || !cloudinaryConfig.cloudName || !cloudinaryConfig.uploadPreset) {
+        console.warn('❌ Cloudinary not configured, skipping cloud upload');
+        console.log('Missing:', {
+          cloudName: !cloudinaryConfig?.cloudName,
+          uploadPreset: !cloudinaryConfig?.uploadPreset
+        });
+        return null;
+      }
+
+      const userDetails = getUserDetails();
+      console.log('👤 User details:', userDetails);
+
+      // Convert SVG string to blob
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+      console.log('📄 SVG blob created, size:', svgBlob.size, 'bytes');
+      
+      // Create FormData for Cloudinary upload
+      const formData = new FormData();
+      formData.append('file', svgBlob);
+      formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+      formData.append('resource_type', 'raw'); // Upload as raw to preserve SVG format
+      // Note: format parameter is not allowed in unsigned uploads
+      
+      // Add metadata for asset tracking
+      const metadata = {
+        user_name: userDetails.name,
+        user_email: userDetails.email,
+        project_name: userDetails.projectName,
+        notes: userDetails.notes,
+        created_at: userDetails.timestamp,
+        asset_type: 'vectorized_svg'
+      };
+      
+      // Add context metadata (Cloudinary's way of storing custom data)
+      const contextString = Object.entries(metadata).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('|');
+      formData.append('context', contextString);
+      console.log('📊 Context metadata:', contextString);
+      
+      // Create folder structure: projects/ProjectName/UserName/filename
+      const projectFolder = userDetails.projectName.replace(/[^a-zA-Z0-9]/g, '_');
+      const userFolder = userDetails.name.replace(/[^a-zA-Z0-9]/g, '_');
+      const timestamp = Date.now();
+      const filename = `projects/${projectFolder}/${userFolder}/svg_${timestamp}`;
+      formData.append('public_id', filename);
+      console.log('📁 Filename:', filename);
+      
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/raw/upload`;
+      console.log('🌐 Upload URL:', uploadUrl);
+      
+      // Upload to Cloudinary
+      console.log('⬆️ Sending request to Cloudinary...');
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData
+      });
+
+      console.log('📡 Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Cloudinary response error:', errorText);
+        throw new Error(`Cloudinary upload failed: ${response.statusText} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ SVG uploaded to Cloudinary successfully:', result.secure_url);
+      console.log('📊 Full Cloudinary response:', result);
+      console.log('🏷️ Asset metadata:', metadata);
+      console.log('📁 Folder structure: projects/' + projectFolder + '/' + userFolder + '/');
+      console.log('🔍 TO FIND METADATA: In Cloudinary, click on this file and look for "Context" section');
+      console.log('📋 Metadata will show as: user_name=' + userDetails.name + '|user_email=' + userDetails.email + '|project_name=' + userDetails.projectName);
+      return result.secure_url;
+      
+    } catch (error) {
+      console.error('💥 Error uploading SVG to Cloudinary:', error);
+      console.error('Error details:', error instanceof Error ? error.message : String(error));
+      return null;
+    }
+  }
+
+  async function processImage(imageData: ImageData): Promise<void> {
+    const options = {
+      ltres: 1,    // linear raster tolerance
+      qtres: 1,    // quadratic raster tolerance
+      pathomit: parseInt(pathOmit.value), // corner threshold
+      colorsampling: 2,
+      numberofcolors: parseInt(colorCount.value),
+      strokewidth: parseFloat(strokeWidth.value),
+      roundcoords: 1
+    };
+
+    console.log('Processing image with options:', options);
+
+    try {
+      svgContainer.innerHTML = '<div class="flex items-center justify-center h-32"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div><span class="ml-2">Processing...</span></div>';
+      
+      // Add a small delay to ensure the loading indicator shows
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('Calling ImageTracer.imagedataToSVG...');
+      const svgString = ImageTracer.imagedataToSVG(imageData, options);
+      console.log('SVG generated successfully, length:', svgString.length);
+      
+      currentSvgString = svgString;
+      
+      // Inject the SVG with proper styling and click handler
+      svgContainer.innerHTML = `<div class="w-full h-auto flex items-center justify-center">${svgString}</div>`;
+      
+      // Show hover hint and add click handler
+      const hoverHint = document.getElementById('hoverHint');
+      if (hoverHint) {
+        hoverHint.classList.remove('hidden');
+      }
+      
+      // Add click handler to open modal
+      svgContainer.onclick = () => openSvgModal(svgString);
+      
+      // Automatically upload to Cloudinary (hidden from user)
+      const cloudinaryUrl = await uploadSvgToCloudinary(svgString);
+      if (cloudinaryUrl) {
+        currentCloudinaryUrl = cloudinaryUrl;
+        console.log('SVG stored in cloud at:', cloudinaryUrl);
+      }
+      
+      // Enable download and continue buttons
+      downloadBtn.disabled = false;
+      continueToDesignerBtn.disabled = false;
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      svgContainer.innerHTML = '<div class="text-red-500">Error processing image. Please try again.</div>';
+    }
+  }
+
+  input.addEventListener('change', async (e) => {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+
+    try {
+      // Upload original image to Cloudinary first
+      console.log('📤 Uploading original image to Cloudinary...');
+      const originalImageUrl = await uploadOriginalImageToCloudinary(file);
+      if (originalImageUrl) {
+        console.log('✅ Original image uploaded:', originalImageUrl);
+      }
+
+      // Show original image preview
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await img.decode();
+      
+      originalPreview.innerHTML = `<img src="${img.src}" class="max-w-full max-h-96 object-contain rounded" alt="Original">`;
+
+      // Draw it into a temporary canvas to get pixel data
+      const tmp = document.createElement('canvas');
+      tmp.width = img.naturalWidth;
+      tmp.height = img.naturalHeight;
+      const ctx = tmp.getContext('2d');
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+      ctx.drawImage(img, 0, 0);
+
+      // Store image data for reprocessing
+      currentImageData = ctx.getImageData(0, 0, tmp.width, tmp.height);
+      
+      // Enable reprocess button
+      reprocessBtn.disabled = false;
+      
+      // Process the image
+      await processImage(currentImageData);
+      
+    } catch (error) {
+      console.error('Error loading image:', error);
+      originalPreview.innerHTML = '<div class="text-red-500">Error loading image. Please try again.</div>';
+    }
+  });
+
+  // Reprocess with new settings
+  reprocessBtn.addEventListener('click', async () => {
+    console.log('Reprocess button clicked');
+    
+    // Disable button and show processing state
+    reprocessBtn.disabled = true;
+    reprocessBtn.textContent = 'Processing...';
+    
+    if (currentImageData) {
+      console.log('Processing with current image data');
+      await processImage(currentImageData);
+    } else {
+      console.log('No image data available for reprocessing');
+      svgContainer.innerHTML = '<div class="text-red-500">No image data available. Please upload an image first.</div>';
+    }
+    
+    // Re-enable button
+    reprocessBtn.disabled = false;
+    reprocessBtn.textContent = 'Reprocess';
+  });
+
+  // Download SVG
+  downloadBtn.addEventListener('click', () => {
+    if (currentSvgString) {
+      const blob = new Blob([currentSvgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Create meaningful filename based on user details
+      const userDetails = getUserDetails();
+      let filename = 'vectorized-image.svg';
+      if (userDetails.projectName && userDetails.name) {
+        filename = `${userDetails.projectName.replace(/[^a-zA-Z0-9]/g, '_')}_${userDetails.name.replace(/[^a-zA-Z0-9]/g, '_')}_vectorized.svg`;
+      }
+      a.download = filename;
+      
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      // Log cloud storage info for developers
+      if (currentCloudinaryUrl) {
+        console.log('📁 SVG also available in cloud storage at:', currentCloudinaryUrl);
+        console.log('📊 Asset tracking info:', userDetails);
+      }
+    }
+  });
+
+  // Continue to Designer with vectorized image
+  continueToDesignerBtn.addEventListener('click', () => {
+    if (currentCloudinaryUrl && currentSvgString) {
+      // Store the vectorized image data in sessionStorage for the designer page
+      const vectorData = {
+        svgUrl: currentCloudinaryUrl,
+        svgString: currentSvgString,
+        userDetails: getUserDetails(),
+        timestamp: new Date().toISOString()
+      };
+      
+      sessionStorage.setItem('vectorizedImage', JSON.stringify(vectorData));
+      
+      // Navigate to designer page
+      window.location.href = '/designer';
+    } else {
+      alert('Please wait for the vectorization to complete before continuing to the designer.');
+    }
+  });
+
+  // Modal functions
+  function openSvgModal(svgString: string) {
+    const modal = document.getElementById('svgModal');
+    const modalContainer = document.getElementById('modalSvgContainer');
+    
+    if (modal && modalContainer) {
+      // Insert SVG with full size styling
+      modalContainer.innerHTML = `<div class="w-full h-full flex items-center justify-center">${svgString}</div>`;
+      
+      // Style the SVG for better viewing
+      const svg = modalContainer.querySelector('svg');
+      if (svg) {
+        svg.style.maxWidth = '100%';
+        svg.style.maxHeight = '100%';
+        svg.style.width = 'auto';
+        svg.style.height = 'auto';
+      }
+      
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+  }
+
+  function closeSvgModal() {
+    const modal = document.getElementById('svgModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+  }
+
+  // Modal event listeners
+  document.getElementById('closeModal')?.addEventListener('click', closeSvgModal);
+  
+  // Close modal when clicking outside
+  document.getElementById('svgModal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      closeSvgModal();
+    }
+  });
+
+  // Modal download button
+  document.getElementById('downloadFromModal')?.addEventListener('click', () => {
+    if (currentSvgString) {
+      const blob = new Blob([currentSvgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const userDetails = getUserDetails();
+      let filename = 'vectorized-image.svg';
+      if (userDetails.projectName && userDetails.name) {
+        filename = `${userDetails.projectName.replace(/[^a-zA-Z0-9]/g, '_')}_${userDetails.name.replace(/[^a-zA-Z0-9]/g, '_')}_vectorized.svg`;
+      }
+      a.download = filename;
+      
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  });
+
+  // Modal continue button
+  document.getElementById('continueFromModal')?.addEventListener('click', () => {
+    if (currentCloudinaryUrl && currentSvgString) {
+      const vectorData = {
+        svgUrl: currentCloudinaryUrl,
+        svgString: currentSvgString,
+        userDetails: getUserDetails(),
+        timestamp: new Date().toISOString()
+      };
+      
+      sessionStorage.setItem('vectorizedImage', JSON.stringify(vectorData));
+      window.location.href = '/designer';
+    } else {
+      alert('Please wait for the vectorization to complete before continuing to the designer.');
+    }
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeSvgModal();
+    }
+  });
+
+  // Developer function to get current Cloudinary URL (accessible via browser console)
+  (window as any).getCurrentSvgCloudUrl = () => {
+    if (currentCloudinaryUrl) {
+      console.log('Current SVG cloud URL:', currentCloudinaryUrl);
+      return currentCloudinaryUrl;
+    } else {
+      console.log('No SVG currently stored in cloud');
+      return null;
+    }
+  };
+</script>
+
+<style>
+  .vectorify-container {
+    max-width: 100%;
+  }
+  
+  #svgContainer svg {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  
+  #svgContainer .w-full {
+    overflow: hidden !important;
+  }
+  
+  /* Modal specific styles */
+  #modalSvgContainer svg {
+    max-width: 90vw;
+    max-height: 70vh;
+    width: auto;
+    height: auto;
+  }
+  
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>

@@ -2,17 +2,17 @@
 import { config } from '../config';
 ---
 
-<div class="max-w-4xl mx-auto p-6">
-  <div class="bg-white rounded-lg shadow-lg p-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="bg-white rounded-lg shadow-lg p-6 lg:p-8">
     <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Design Your Custom Marker</h2>
     
-    <div class="grid lg:grid-cols-2 gap-8">
+    <div class="grid xl:grid-cols-2 gap-8 lg:gap-12">
       <!-- Design Canvas -->
       <div class="space-y-6">
         <div class="text-center">
           <h3 class="text-xl font-semibold text-gray-900 mb-4">Preview</h3>
-          <div class="bg-gray-100 rounded-lg p-4 inline-block">
-            <canvas id="marker-canvas" width={config.canvas.width} height={config.canvas.height} class="border border-gray-300 rounded"></canvas>
+          <div class="bg-gray-100 rounded-lg p-6 inline-block max-w-full overflow-auto">
+            <canvas id="marker-canvas" width={config.canvas.width} height={config.canvas.height} class="border border-gray-300 rounded max-w-full h-auto"></canvas>
           </div>
         </div>
         
@@ -105,13 +105,14 @@ import { config } from '../config';
         <div id="upload-success" class="hidden">
           <div class="bg-green-50 border border-green-200 rounded-lg p-4">
             <div class="text-green-800 font-medium">✓ Preview uploaded successfully!</div>
+            <div class="text-green-700 text-sm mt-1">Your custom marker is ready to order!</div>
           </div>
         </div>
 
         <!-- Add to Cart Button -->
         <button 
           id="add-to-cart"
-          class="snipcart-add-item w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          class="snipcart-add-item w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed transform hover:scale-105"
           disabled
           data-item-id={config.product.id}
           data-item-price={config.product.price}
@@ -140,17 +141,29 @@ import { config } from '../config';
     }
 
     init() {
-      // Initialize Fabric.js canvas
+      // Initialize Fabric.js canvas with performance optimizations
       this.canvas = new fabric.Canvas('marker-canvas', {
         backgroundColor: '#ffffff',
-        selection: false
+        selection: false,
+        renderOnAddRemove: false, // Disable automatic rendering
+        skipTargetFind: false,
+        perPixelTargetFind: true,
+        enableRetinaScaling: true,
+        imageSmoothingEnabled: true
       });
+
+      // Enable hardware acceleration
+      this.canvas.getElement().style.imageRendering = 'auto';
+      
+      // Optimize canvas performance
+      this.canvas.freeDrawingBrush.width = 1;
+      this.canvas.freeDrawingBrush.color = '#000000';
 
       // Set initial shape
       this.setShape('circle');
       
-      // Check for caricature image from generator
-      this.checkForCaricatureImage();
+      // Check for vectorized image from vectorize page
+      this.checkForVectorizedImage();
       
       // Bind events
       this.bindEvents();
@@ -171,9 +184,21 @@ import { config } from '../config';
         });
       });
 
-      // Size slider
-      document.getElementById('size-slider').addEventListener('input', (e) => {
-        this.scaleImage(parseFloat(e.target.value));
+      // Size slider with throttling for better performance
+      const sizeSlider = document.getElementById('size-slider');
+      let sliderTimeout;
+      sizeSlider.addEventListener('input', (e) => {
+        const scale = parseFloat(e.target.value);
+        
+        // Clear previous timeout
+        if (sliderTimeout) {
+          clearTimeout(sliderTimeout);
+        }
+        
+        // Throttle the scaling to improve performance
+        sliderTimeout = setTimeout(() => {
+          this.scaleImage(scale);
+        }, 16); // ~60fps
       });
 
       // Control buttons
@@ -200,10 +225,10 @@ import { config } from '../config';
             this.canvas.remove(this.uploadedImage);
           }
 
-          // Scale image to fit canvas
+          // Scale image to fit canvas (use more space with larger canvas)
           const scale = Math.min(
-            (config.canvas.width * 0.6) / img.width,
-            (config.canvas.height * 0.6) / img.height
+            (config.canvas.width * 0.8) / img.width,
+            (config.canvas.height * 0.8) / img.height
           );
 
           img.set({
@@ -215,12 +240,19 @@ import { config } from '../config';
             scaleY: scale,
             selectable: true,
             hasControls: true,
-            hasBorders: true
+            hasBorders: true,
+            moveable: true,
+            evented: true
           });
 
           this.uploadedImage = img;
           this.canvas.add(img);
+          
+          // Ensure the canvas allows selection for this specific object
+          this.canvas.selection = true;
           this.canvas.setActiveObject(img);
+          this.canvas.selection = false; // Reset to prevent multi-selection
+          
           this.canvas.renderAll();
 
           // Enable generate button
@@ -298,6 +330,7 @@ import { config } from '../config';
       if (shape) {
         this.canvas.add(shape);
         this.canvas.sendToBack(shape);
+        // Manual render since we disabled automatic rendering
         this.canvas.renderAll();
       }
     }
@@ -317,10 +350,21 @@ import { config } from '../config';
 
     scaleImage(scale) {
       if (this.uploadedImage) {
+        // Store the original scale if not already stored
+        if (!this.originalScale) {
+          this.originalScale = {
+            scaleX: this.uploadedImage.scaleX,
+            scaleY: this.uploadedImage.scaleY
+          };
+        }
+        
+        // Apply scale relative to original size
         this.uploadedImage.set({
-          scaleX: this.uploadedImage.scaleX * scale / this.uploadedImage.scaleX,
-          scaleY: this.uploadedImage.scaleY * scale / this.uploadedImage.scaleY
+          scaleX: this.originalScale.scaleX * scale,
+          scaleY: this.originalScale.scaleY * scale
         });
+        
+        // Manual render since we disabled automatic rendering
         this.canvas.renderAll();
       }
     }
@@ -332,6 +376,7 @@ import { config } from '../config';
         } else {
           this.uploadedImage.set('flipY', !this.uploadedImage.flipY);
         }
+        // Manual render since we disabled automatic rendering
         this.canvas.renderAll();
       }
     }
@@ -339,12 +384,16 @@ import { config } from '../config';
     rotateImage() {
       if (this.uploadedImage) {
         this.uploadedImage.rotate(this.uploadedImage.angle + 90);
+        // Manual render since we disabled automatic rendering
         this.canvas.renderAll();
       }
     }
 
     resetCanvas() {
       if (this.uploadedImage) {
+        // Reset original scale tracking
+        this.originalScale = null;
+        
         this.uploadedImage.set({
           left: config.canvas.width / 2,
           top: config.canvas.height / 2,
@@ -354,6 +403,14 @@ import { config } from '../config';
           flipX: false,
           flipY: false
         });
+        
+        // Reset slider to default value
+        const sizeSlider = document.getElementById('size-slider');
+        if (sizeSlider) {
+          sizeSlider.value = 1;
+        }
+        
+        // Manual render since we disabled automatic rendering
         this.canvas.renderAll();
       }
     }
@@ -363,60 +420,133 @@ import { config } from '../config';
         alert('Please upload an image first');
         return;
       }
-
+      
       try {
+        console.log('Starting preview generation...');
+        console.log('Current shape:', this.currentShape);
+        console.log('Uploaded image:', this.uploadedImage);
+        
         // Show loading state
         document.getElementById('upload-status').classList.remove('hidden');
         document.getElementById('generate-preview').disabled = true;
 
         // Create high-res export canvas
-        const exportCanvas = new fabric.Canvas(null, {
-          width: config.canvas.exportWidth,
-          height: config.canvas.exportHeight
-        });
+        console.log('Creating export canvas with dimensions:', config.canvas.exportWidth, 'x', config.canvas.exportHeight);
+        let exportCanvas;
+        try {
+          exportCanvas = new fabric.Canvas(null, {
+            width: config.canvas.exportWidth,
+            height: config.canvas.exportHeight
+          });
+          console.log('Export canvas created successfully');
+        } catch (canvasError) {
+          console.error('Error creating export canvas:', canvasError);
+          throw new Error(`Canvas creation failed: ${canvasError.message}`);
+        }
 
         // Scale factor for high-res export
         const scaleFactor = config.canvas.exportWidth / config.canvas.width;
+        console.log('Scale factor:', scaleFactor);
 
         // Clone and scale objects for export
         const objects = this.canvas.getObjects();
-        for (let obj of objects) {
-          const cloned = await this.cloneObject(obj);
-          cloned.set({
-            left: obj.left * scaleFactor,
-            top: obj.top * scaleFactor,
-            scaleX: obj.scaleX * scaleFactor,
-            scaleY: obj.scaleY * scaleFactor
-          });
-          
-          if (cloned.type === 'path') {
-            cloned.set({
-              strokeWidth: obj.strokeWidth * scaleFactor
-            });
-          } else if (cloned.type === 'circle' || cloned.type === 'rect') {
-            cloned.set({
-              strokeWidth: obj.strokeWidth * scaleFactor
-            });
-            if (cloned.type === 'circle') {
-              cloned.set({ radius: obj.radius * scaleFactor });
-            } else {
-              cloned.set({
-                width: obj.width * scaleFactor,
-                height: obj.height * scaleFactor
-              });
-            }
-          }
-          
-          exportCanvas.add(cloned);
+        console.log('Objects to clone:', objects.length);
+        
+        try {
+           for (let i = 0; i < objects.length; i++) {
+             const obj = objects[i];
+             console.log(`Cloning object ${i + 1}/${objects.length}:`, obj.type);
+             
+             let cloned;
+             
+             // Special handling for image objects to avoid blob URL issues
+              if (obj.type === 'image') {
+                console.log('Creating new image object from data URL...');
+                // Convert the image to a data URL to avoid blob URL issues
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+                tempCanvas.width = obj.width * obj.scaleX;
+                tempCanvas.height = obj.height * obj.scaleY;
+               
+               // Draw the image to the temporary canvas
+               tempCtx.drawImage(obj.getElement(), 0, 0, tempCanvas.width, tempCanvas.height);
+               const dataURL = tempCanvas.toDataURL('image/png');
+               
+               // Create a new fabric image from the data URL
+               cloned = await new Promise((resolve, reject) => {
+                 fabric.Image.fromURL(dataURL, (img) => {
+                   if (img) {
+                     resolve(img);
+                   } else {
+                     reject(new Error('Failed to create image from data URL'));
+                   }
+                 });
+               });
+             } else {
+               cloned = await this.cloneObject(obj);
+             }
+             
+             cloned.set({
+               left: obj.left * scaleFactor,
+               top: obj.top * scaleFactor,
+               scaleX: obj.scaleX * scaleFactor,
+               scaleY: obj.scaleY * scaleFactor
+             });
+             
+             if (cloned.type === 'path') {
+               cloned.set({
+                 strokeWidth: obj.strokeWidth * scaleFactor
+               });
+             } else if (cloned.type === 'circle' || cloned.type === 'rect') {
+               cloned.set({
+                 strokeWidth: obj.strokeWidth * scaleFactor
+               });
+               if (cloned.type === 'circle') {
+                 cloned.set({ radius: obj.radius * scaleFactor });
+               } else {
+                 cloned.set({
+                   width: obj.width * scaleFactor,
+                   height: obj.height * scaleFactor
+                 });
+               }
+             }
+             
+             exportCanvas.add(cloned);
+           }
+          console.log('All objects cloned successfully');
+        } catch (cloneError) {
+          console.error('Error cloning objects:', cloneError);
+          throw new Error(`Object cloning failed: ${cloneError.message}`);
         }
 
-        exportCanvas.renderAll();
+        console.log('Rendering export canvas...');
+        try {
+          exportCanvas.renderAll();
+          console.log('Export canvas rendered successfully');
+        } catch (renderError) {
+          console.error('Error rendering export canvas:', renderError);
+          throw new Error(`Canvas rendering failed: ${renderError.message}`);
+        }
 
-        // Apply shape mask and export
-        const dataURL = this.applyShapeMask(exportCanvas);
+        console.log('Applying shape mask...');
+        let dataURL;
+        try {
+          dataURL = this.applyShapeMask(exportCanvas);
+          console.log('Shape mask applied successfully, dataURL length:', dataURL.length);
+        } catch (maskError) {
+          console.error('Error applying shape mask:', maskError);
+          throw new Error(`Shape masking failed: ${maskError.message}`);
+        }
         
-        // Upload to Cloudinary
-        const imageUrl = await this.uploadToCloudinary(dataURL);
+        console.log('Uploading to Cloudinary...');
+        let imageUrl;
+        try {
+          imageUrl = await this.uploadToCloudinary(dataURL);
+          console.log('Upload successful, image URL:', imageUrl);
+        } catch (uploadError) {
+          console.error('Error uploading to Cloudinary:', uploadError);
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
         
         this.previewImageUrl = imageUrl;
         
@@ -424,40 +554,70 @@ import { config } from '../config';
         document.getElementById('upload-status').classList.add('hidden');
         document.getElementById('upload-success').classList.remove('hidden');
         
-        // Enable add to cart
+        // Enable add to cart with visual feedback
         const addToCartBtn = document.getElementById('add-to-cart');
         addToCartBtn.disabled = false;
         addToCartBtn.setAttribute('data-item-custom1-value', imageUrl);
         addToCartBtn.setAttribute('data-item-url', 'https://magnetic-personalities.pages.dev/product/');
+        
+        // Add visual feedback - subtle pulse animation
+        addToCartBtn.classList.add('animate-pulse');
+        setTimeout(() => {
+          addToCartBtn.classList.remove('animate-pulse');
+        }, 2000); // Remove pulse after 2 seconds
         
         // Re-enable generate button
         document.getElementById('generate-preview').disabled = false;
 
       } catch (error) {
         console.error('Error generating preview:', error);
+        console.error('Error stack:', error.stack);
         document.getElementById('upload-status').classList.add('hidden');
-        alert('Error generating preview. Please try again.');
+        
+        // Show more specific error message
+        let errorMessage = 'Error generating preview. Please try again.';
+        if (error.message.includes('Cloudinary') || error.message.includes('Upload')) {
+          errorMessage = 'Upload service temporarily unavailable. Please try again later.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('Canvas') || error.message.includes('rendering')) {
+          errorMessage = 'Image processing error. Please try again.';
+        }
+        
+        alert(errorMessage);
         document.getElementById('generate-preview').disabled = false;
       }
     }
 
     async cloneObject(obj) {
-      return new Promise((resolve) => {
-        obj.clone((cloned) => {
-          resolve(cloned);
-        });
+      return new Promise((resolve, reject) => {
+        try {
+          obj.clone((cloned) => {
+            if (cloned) {
+              resolve(cloned);
+            } else {
+              console.error('Failed to clone object:', obj.type);
+              reject(new Error(`Failed to clone ${obj.type} object`));
+            }
+          });
+        } catch (error) {
+          console.error('Error during object cloning:', error);
+          reject(error);
+        }
       });
     }
 
-    applyShapeMask(canvas) {
-      const ctx = canvas.getContext('2d');
+    applyShapeMask(fabricCanvas) {
+      // Get the underlying canvas element from Fabric.js canvas
+      const canvas = fabricCanvas.getElement();
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       
       // Create mask based on shape
       const maskCanvas = document.createElement('canvas');
       maskCanvas.width = canvas.width;
       maskCanvas.height = canvas.height;
-      const maskCtx = maskCanvas.getContext('2d');
+      const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
       
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
@@ -499,53 +659,87 @@ import { config } from '../config';
     }
 
     async uploadToCloudinary(dataURL) {
-      const formData = new FormData();
-      
-      // Convert dataURL to blob
-      const response = await fetch(dataURL);
-      const blob = await response.blob();
-      
-      formData.append('file', blob);
-      formData.append('upload_preset', config.cloudinary.uploadPreset);
-      formData.append('cloud_name', config.cloudinary.cloudName);
-      
-      const uploadResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${config.cloudinary.cloudName}/image/upload`,
-        {
+      // Check if Cloudinary is properly configured
+      if (config.cloudinary.cloudName === 'your_cloudinary_cloud_name' || 
+          config.cloudinary.uploadPreset === 'your_unsigned_upload_preset') {
+        console.error('Cloudinary not configured. Using placeholder image.');
+        // Return a placeholder image URL for development
+        return 'https://via.placeholder.com/400x400/3b82f6/ffffff?text=Preview+Generated';
+      }
+
+      try {
+        console.log('Uploading to Cloudinary with config:', {
+          cloudName: config.cloudinary.cloudName,
+          uploadPreset: config.cloudinary.uploadPreset
+        });
+
+        const formData = new FormData();
+        
+        // Convert dataURL to blob
+        const response = await fetch(dataURL);
+        const blob = await response.blob();
+        
+        console.log('Blob size:', blob.size, 'bytes');
+        
+        formData.append('file', blob);
+        formData.append('upload_preset', config.cloudinary.uploadPreset);
+        
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${config.cloudinary.cloudName}/image/upload`;
+        console.log('Upload URL:', uploadUrl);
+        
+        const uploadResponse = await fetch(uploadUrl, {
           method: 'POST',
           body: formData
+        });
+        
+        console.log('Upload response status:', uploadResponse.status);
+        
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error('Upload failed with status:', uploadResponse.status, 'Error:', errorText);
+          throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
         }
-      );
-      
-      if (!uploadResponse.ok) {
-        throw new Error('Upload failed');
+        
+        const result = await uploadResponse.json();
+        console.log('Upload successful:', result.secure_url);
+        return result.secure_url;
+        
+      } catch (error) {
+        console.error('Cloudinary upload error:', error);
+        throw new Error(`Failed to upload to Cloudinary: ${error.message}`);
       }
-      
-      const result = await uploadResponse.json();
-      return result.secure_url;
     }
 
-    checkForCaricatureImage() {
-      // Check if there's a caricature image in sessionStorage
-      const caricatureData = sessionStorage.getItem('caricatureImage');
-      if (caricatureData) {
-        this.loadCaricatureImage(caricatureData);
+    checkForVectorizedImage() {
+      // Check if there's a vectorized image from the vectorize page
+      const vectorizedData = sessionStorage.getItem('vectorizedImage');
+      if (vectorizedData) {
+        this.loadVectorizedImage(JSON.parse(vectorizedData));
         // Clear the stored data after loading
-        sessionStorage.removeItem('caricatureImage');
+        sessionStorage.removeItem('vectorizedImage');
       }
     }
 
-    loadCaricatureImage(imageData) {
-      fabric.Image.fromURL(imageData, (img) => {
+
+
+    loadVectorizedImage(vectorData) {
+      // Create a blob URL from the SVG string to avoid CORS issues
+      const svgBlob = new Blob([vectorData.svgString], { type: 'image/svg+xml' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      
+      fabric.Image.fromURL(svgUrl, (img) => {
+        // Clean up the blob URL
+        URL.revokeObjectURL(svgUrl);
+        
         // Remove existing image
         if (this.uploadedImage) {
           this.canvas.remove(this.uploadedImage);
         }
 
-        // Scale image to fit canvas
+        // Scale image to fit canvas (use more space with larger canvas)
         const scale = Math.min(
-          (config.canvas.width * 0.6) / img.width,
-          (config.canvas.height * 0.6) / img.height
+          (config.canvas.width * 0.8) / img.width,
+          (config.canvas.height * 0.8) / img.height
         );
 
         img.set({
@@ -557,34 +751,59 @@ import { config } from '../config';
           scaleY: scale,
           selectable: true,
           hasControls: true,
-          hasBorders: true
+          hasBorders: true,
+          moveable: true,
+          evented: true
         });
 
         this.uploadedImage = img;
         this.canvas.add(img);
+        
+        // Ensure the canvas allows selection for this specific object
+        this.canvas.selection = true;
         this.canvas.setActiveObject(img);
+        this.canvas.selection = false; // Reset to prevent multi-selection
+        
+        // Store original scale for proper scaling calculations
+        this.originalScale = {
+          scaleX: scale,
+          scaleY: scale
+        };
+        
+        // Manual render since we disabled automatic rendering
         this.canvas.renderAll();
 
         // Enable generate button
         document.getElementById('generate-preview').disabled = false;
         
-        // Show success message
+        // Show success message with user details
         const successDiv = document.createElement('div');
-        successDiv.className = 'bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4';
-        successDiv.innerHTML = '<div class="text-blue-800 font-medium">✓ Caricature loaded successfully!</div>';
+        successDiv.className = 'bg-green-50 border border-green-200 rounded-lg p-4 mb-4';
+        successDiv.innerHTML = `
+          <div class="text-green-800 font-medium">✓ Vectorized image loaded successfully!</div>
+          <div class="text-green-700 text-sm mt-1">Project: ${vectorData.userDetails.projectName} | User: ${vectorData.userDetails.name}</div>
+        `;
         document.querySelector('.space-y-6').insertBefore(successDiv, document.querySelector('.space-y-6').firstChild);
         
-        // Remove message after 3 seconds
+        // Remove message after 5 seconds
         setTimeout(() => {
           successDiv.remove();
-        }, 3000);
-      });
+        }, 5000);
+      }, { crossOrigin: 'anonymous' });
     }
   }
 
   // Initialize when DOM is loaded and Fabric.js is available
   function initializeDesigner() {
     if (typeof fabric !== 'undefined') {
+      // Log configuration for debugging
+      console.log('Cloudinary Configuration:', {
+        cloudName: config.cloudinary.cloudName,
+        uploadPreset: config.cloudinary.uploadPreset,
+        isConfigured: config.cloudinary.cloudName !== 'your_cloudinary_cloud_name' && 
+                     config.cloudinary.uploadPreset !== 'your_unsigned_upload_preset'
+      });
+      
       new MarkerDesigner();
     } else {
       // Wait for Fabric.js to load

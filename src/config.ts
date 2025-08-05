@@ -22,10 +22,10 @@ export const config = {
   
   // Canvas settings for marker design
   canvas: {
-    width: 400,
-    height: 400,
-    exportWidth: 800,
-    exportHeight: 800,
+    width: 600,
+    height: 600,
+    exportWidth: 1200,
+    exportHeight: 1200,
   },
   
   // Available marker shapes
