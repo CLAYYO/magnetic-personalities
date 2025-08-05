@@ -1,6 +1,23 @@
 // Configuration constants for the application
 // Updated for Cloudflare Pages deployment
+
+// Get the current environment base URL
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    // Client-side: use current origin
+    return window.location.origin;
+  }
+  // Server-side: check environment
+  if (import.meta.env.DEV) {
+    return 'http://localhost:4323'; // Development URL
+  }
+  return 'https://magnetic-personalities.pages.dev'; // Production URL
+};
+
 export const config = {
+  // Base URL for the application
+  baseUrl: getBaseUrl(),
+  
   // Cloudinary settings
   cloudinary: {
     cloudName: import.meta.env.CLOUDINARY_CLOUD_NAME || 'your_cloudinary_cloud_name',
